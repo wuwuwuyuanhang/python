@@ -6,7 +6,15 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import datasets, metrics
+import matplotlib
 from matplotlib import pyplot as plt
+
+# Default parameters for plots
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['figure.titlesize'] = 20
+matplotlib.rcParams['figure.figsize'] = [9, 7]
+matplotlib.rcParams['font.family'] = ['STKaiTi']
+matplotlib.rcParams['axes.unicode_minus']=False
 
 # 构建三层神经网络
 # out = ReLU{ ReLU{ ReLU[ X @ W1 + b1 ] @ W2 + b2 } @ W3 + b3 }
@@ -61,12 +69,12 @@ for epoch in range(20):
         # 自动梯度，需要求梯度的张量有[w1, b1, w2, b2, w3, b3]
         grads = tape.gradient(loss, [w1, b1, w2, b2, w3, b3])
         # 梯度更新，assign_sub将当前值减去参数值，原地更新
-        w1.assign(lr * grads[0])
-        b1.assign(lr * grads[1])
-        w2.assign(lr * grads[2])
-        b2.assign(lr * grads[3])
-        w3.assign(lr * grads[4])
-        b3.assign(lr * grads[5])
+        w1.assign_sub(lr * grads[0])
+        b1.assign_sub(lr * grads[1])
+        w2.assign_sub(lr * grads[2])
+        b2.assign_sub(lr * grads[3])
+        w3.assign_sub(lr * grads[4])
+        b3.assign_sub(lr * grads[5])
 
         acc_meter.update_state(tf.argmax(out, axis=1), y)
 
