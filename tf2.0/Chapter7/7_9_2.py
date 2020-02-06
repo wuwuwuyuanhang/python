@@ -21,18 +21,18 @@ model = Sequential([
     layers.Dense(25, activation='sigmoid'), # 隐藏层1, 2 => 25
     layers.Dense(50, activation='sigmoid'), # 隐藏层2, 25 => 50
     layers.Dense(25, activation='sigmoid'), # 隐藏层3, 50 => 25
-    layers.Dense(2, activation='sigmoid') # 输出层, 25 => 2
+    layers.Dense(2, activation=None) # 输出层, 25 => 2
 ])
 
 model.build(input_shape=(None, 2))
 model.summary()
-optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.1)
 
 train_db = tf.data.Dataset.from_tensor_slices((X_train, y_train))
 train_db = train_db.batch(32) # 单个训练
 
 train_mses, test_mses = [], []
-train_accs = metrics.Accuracy()
+train_accs = metrics.SparseCategoricalAccuracy()
 accs = []
 
 for epoch in range(200):
@@ -43,27 +43,27 @@ for epoch in range(200):
         with tf.GradientTape() as tape:
             out = model(x)
 
-            loss = tf.keras.losses.MSE(y_onehot, out)
+            loss = tf.keras.losses.categorical_crossentropy(y_onehot, out, from_logits=True)
             loss = tf.reduce_mean(loss)
 
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-        train_accs.update_state(y, tf.argmax(out, axis=1))
+        train_accs.update_state(y, out)
 
-        if step % 10 == 0:
-            print(epoch, step, 'loss:', float(loss), 'acc:', train_accs.result().numpy())
-            train_mses.append(float(loss))
-            accs.append(train_accs.result().numpy())
-            train_accs.reset_states()
+    if epoch % 10 == 0:
+        print(epoch, step, 'loss:', float(loss), 'acc:', train_accs.result().numpy())
+        train_mses.append(float(loss))
+        accs.append(train_accs.result().numpy())
+        train_accs.reset_states()
 
 
-        if step % 10 == 0:
-            test_out = model(tf.constant(X_test))
-            y_test_onehot = tf.constant(y_test)
-            y_test_onehot = tf.one_hot(y_test_onehot, depth=2)
-            test_loss = tf.keras.losses.MSE(y_test_onehot, test_out)
-            test_mses.append(float(tf.reduce_mean(test_loss)))
+    if epoch % 10 == 0:
+        test_out = model(tf.constant(X_test))
+        y_test_onehot = tf.constant(y_test)
+        y_test_onehot = tf.one_hot(y_test_onehot, depth=2)
+        test_loss = tf.keras.losses.categorical_crossentropy(y_test_onehot, test_out, from_logits=True)
+        test_mses.append(float(tf.reduce_mean(test_loss)))
 
 
 plt.figure()
